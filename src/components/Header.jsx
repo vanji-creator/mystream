@@ -28,10 +28,12 @@ const Header = () => {
         <input
           type="text"
           className="px-2 h-8 w-3/5 border border-slate-700 rounded-full"
+          placeholder="The best youtube clone"
         />
         <button className="ml-2 hover:text-slate-600">Search</button>
       </div>
-      <div className="col-span-2">
+      <div className="col-span-2 flex ">
+        <p className="mt-1 mx-2 text-slate-500">App Under Development</p>
         <img
           className="h-8"
           alt="user"

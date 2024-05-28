@@ -10,9 +10,10 @@ const WatchPage = () => {
     dispatch(closeMenu());
   }, []);
   return (
-    <div className="px-10 py-5">
+    <div className="px-28 py-5 rounded-lg">
       <iframe
-        width="1100"
+        className="rounded-lg"
+        width="900"
         height="500"
         src={"https://www.youtube.com/embed/" + searchParams.get("v")}
         title="YouTube video player"
