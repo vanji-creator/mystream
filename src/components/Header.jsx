@@ -1,8 +1,95 @@
-import React from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useDispatch } from "react-redux";
 import { toggleMenu } from "../utils/appSlice";
 
 const Header = () => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [suggestionResult, setSuggestionResult] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const suggestionsRef = useRef(null);
+
+  useEffect(() => {
+    //API call
+    const timer = setTimeout(() => getSearchSuggestions(), 200);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [searchQuery]);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target) &&
+        event.target.tagName !== "INPUT"
+      ) {
+        setShowSuggestions(false);
+      }
+    }
+
+    document.addEventListener("click", handleClickOutside);
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, []);
+
+  function fetchJsonp(url, params = {}, callbackName = "callback") {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      const callback = `jsonpCallback_${Date.now()}`;
+      params[callbackName] = callback;
+      const queryParams = new URLSearchParams(params).toString();
+
+      script.src = `${url}?${queryParams}`;
+
+      window[callback] = (data) => {
+        resolve(data);
+        delete window[callback];
+        document.body.removeChild(script);
+      };
+
+      script.onerror = () => {
+        reject(new Error("JSONP request failed"));
+        delete window[callback];
+        document.body.removeChild(script);
+      };
+
+      document.body.appendChild(script);
+    });
+  }
+
+  const GOOGLE_AC_URL = `https://clients1.google.com/complete/search`;
+
+  function fetchAutocompleteSuggestions(searchQuery) {
+    const params = {
+      client: "youtube",
+      hl: "en",
+      ds: "yt",
+      q: searchQuery,
+    };
+
+    return fetchJsonp(GOOGLE_AC_URL, params, "callback")
+      .then((data) => {
+        // console.log(data);
+        return data;
+      })
+      .catch((error) => {
+        console.error("Error fetching autocomplete suggestions:", error);
+      });
+  }
+
+  const getSearchSuggestions = async () => {
+    // console.log(searchQuery);
+    const result = await fetchAutocompleteSuggestions(searchQuery);
+    if (result) {
+      const suggestions = result[1].map((suggestion) => suggestion[0]);
+      // console.log(suggestions);
+      setSuggestionResult(suggestions);
+      setShowSuggestions(true);
+    }
+  };
+
   const dispatch = useDispatch();
   const toggleMenuHandler = () => {
     dispatch(toggleMenu());
@@ -25,12 +112,34 @@ const Header = () => {
         </a>
       </div>
       <div className="col-span-8">
-        <input
-          type="text"
-          className="px-2 h-8 w-3/5 border border-slate-700 rounded-full"
-          placeholder="The best youtube clone"
-        />
-        <button className="ml-2 hover:text-slate-600">Search</button>
+        <div>
+          <input
+            type="text"
+            className="px-4 h-8 w-3/5 border border-slate-700 rounded-full"
+            placeholder="The best youtube clone"
+            value={searchQuery}
+            onFocus={() => setShowSuggestions(true)}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <button className="ml-2 hover:text-slate-600">Search</button>
+        </div>
+        {showSuggestions && suggestionResult.length > 1 && (
+          <div
+            ref={suggestionsRef}
+            className="fixed bg-white py-6 px-4 w-[31rem] rounded-lg text-slate-700 shadow-lg"
+          >
+            <ul className="">
+              {suggestionResult.map((suggestion, index) => (
+                <li
+                  className="hover:text-black hover:font-semibold"
+                  key={index}
+                >
+                  {suggestion}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
       <div className="col-span-2 flex ">
         <p className="mt-1 mx-2 text-slate-500">App Under Development</p>
