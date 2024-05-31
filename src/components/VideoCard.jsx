@@ -10,7 +10,9 @@ const VideoCard = ({ info }) => {
         <li className="text-wrap font-bold ">{title}</li>
         <div className="flex ">
           <li>{channelTitle}</li>
-          <li className="ml-4">{statistics.viewCount} views</li>
+          {statistics && statistics.viewCount && (
+            <li className="ml-4">{statistics.viewCount} views</li>
+          )}
         </div>
       </ul>
     </div>

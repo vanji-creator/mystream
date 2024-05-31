@@ -1,38 +1,49 @@
-import React, { useEffect, useState, useRef } from "react";
-import { useDispatch } from "react-redux";
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { toggleMenu } from "../utils/appSlice";
+import { cacheResults } from "../utils/searchSlice";
+import { GOOGLE_API_KEY } from "../utils/constants";
+import { addSearchResults } from "../utils/videoSlice";
 
 const Header = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestionResult, setSuggestionResult] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const suggestionsRef = useRef(null);
+  const searchCache = useSelector((store) => store.search);
+  const dispatch = useDispatch();
+  // const suggestionsRef = useRef(null);
 
   useEffect(() => {
     //API call
-    const timer = setTimeout(() => getSearchSuggestions(), 200);
+    const timer = setTimeout(() => {
+      if (searchCache[searchQuery]) {
+        setSuggestionResult(searchCache[searchQuery]);
+      } else {
+        getSearchSuggestions();
+      }
+    }, 200);
 
     return () => {
       clearTimeout(timer);
     };
   }, [searchQuery]);
 
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (
-        suggestionsRef.current &&
-        !suggestionsRef.current.contains(event.target) &&
-        event.target.tagName !== "INPUT"
-      ) {
-        setShowSuggestions(false);
-      }
-    }
+  // useEffect(() => {
+  //   function handleClickOutside(event) {
+  //     if (
+  //       suggestionsRef.current &&
+  //       !suggestionsRef.current.contains(event.target) &&
+  //       event.target.tagName !== "INPUT"
+  //     ) {
+  //       setShowSuggestions(false);
+  //     }
+  //   }
 
-    document.addEventListener("click", handleClickOutside);
-    return () => {
-      document.removeEventListener("click", handleClickOutside);
-    };
-  }, []);
+  //   document.addEventListener("click", handleClickOutside);
+  //   return () => {
+  //     document.removeEventListener("click", handleClickOutside);
+  //   };
+  // }, []);
 
   function fetchJsonp(url, params = {}, callbackName = "callback") {
     return new Promise((resolve, reject) => {
@@ -86,17 +97,39 @@ const Header = () => {
       const suggestions = result[1].map((suggestion) => suggestion[0]);
       // console.log(suggestions);
       setSuggestionResult(suggestions);
-      setShowSuggestions(true);
+
+      //update cache
+      dispatch(cacheResults({ [searchQuery]: suggestions }));
     }
   };
 
-  const dispatch = useDispatch();
+  const getSearchVideos = async (suggestion) => {
+    setSearchQuery(suggestion);
+    const data = await fetch(
+      "https://youtube.googleapis.com/youtube/v3/search?part=snippet&maxResults=25&q=" +
+        suggestion +
+        "&key=" +
+        GOOGLE_API_KEY
+    );
+    const json = await data.json();
+    dispatch(addSearchResults(json.items));
+  };
+
+  const handleSuggestionClick = (suggestion) => {
+    getSearchVideos(suggestion);
+    setShowSuggestions(false); // Optionally hide suggestions after selection
+  };
+
+  const handleBlur = () => {
+    setTimeout(() => setShowSuggestions(false), 200); // 200ms delay
+  };
+
   const toggleMenuHandler = () => {
     dispatch(toggleMenu());
   };
   return (
-    <div className="ml-2 grid grid-flow-col p-2 shadow-lg">
-      <div className="flex col-span-2">
+    <div className="ml-2 grid grid-flow-col p-2 shadow-lg  ">
+      <div className="flex col-span-2 ">
         <img
           className="h-5 mt-2 ml-2 cursor-pointer"
           alt="hamburger-icon"
@@ -119,22 +152,30 @@ const Header = () => {
             placeholder="The best youtube clone"
             value={searchQuery}
             onFocus={() => setShowSuggestions(true)}
+            onBlur={handleBlur}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <button className="ml-2 hover:text-slate-600">Search</button>
+          <button
+            className="ml-2 hover:text-slate-600"
+            onMouseDown={() => handleSuggestionClick(searchQuery)}
+          >
+            Search
+          </button>
         </div>
         {showSuggestions && suggestionResult.length > 1 && (
           <div
-            ref={suggestionsRef}
-            className="fixed bg-white py-6 px-4 w-[31rem] rounded-lg text-slate-700 shadow-lg"
+            // ref={suggestionsRef}
+            className={`fixed bg-white py-6 px-4 w-[31rem] rounded-lg text-slate-700 shadow-lg ${showSuggestions ? "block" : "hidden"}`}
           >
             <ul className="">
-              {suggestionResult.map((suggestion, index) => (
+              {suggestionResult.map((suggestion) => (
                 <li
-                  className="hover:text-black hover:font-semibold"
-                  key={index}
+                  className="hover:text-black hover:font-semibold m-1 hover:bg-gray-300"
+                  key={suggestion}
                 >
-                  {suggestion}
+                  <button onMouseDown={() => handleSuggestionClick(suggestion)}>
+                    {suggestion}
+                  </button>
                 </li>
               ))}
             </ul>
