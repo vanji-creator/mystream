@@ -10,3 +10,5 @@ export const SEARCH_SUGGEST =
 export const SEARCH_FEED =
   "https://youtube.googleapis.com/youtube/v3/search?part=snippet&maxResults=25&q=surfing&key=" +
   GOOGLE_API_KEY;
+
+export const OFFSET_LIVECHAT = 25;
