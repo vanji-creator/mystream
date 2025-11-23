@@ -1,24 +1,30 @@
 import React from "react";
-import Button from "./Button";
 
 const ButtonList = () => {
   const list = [
     "All",
-    "Tutorials",
+    "Stonks",
+    "Crypto",
+    "Tech",
     "Music",
-    "Recently Added",
     "Live",
-    "Vlogs",
-    "Football",
-    "Cricket",
-    "IPL",
-    "Champions League",
+    "Gaming",
+    "Coding",
+    "AI",
+    "Startups",
+    "Finance",
+    "Space",
   ];
 
   return (
-    <div className="flex">
+    <div className="flex w-full overflow-x-auto pb-4 scrollbar-hide space-x-3">
       {list.map((value, index) => (
-        <Button key={index} name={value} />
+        <button
+          key={index}
+          className="px-5 py-2 whitespace-nowrap bg-stonks-800 text-stonks-text rounded-lg border border-stonks-700 hover:bg-gradient-to-r hover:from-stonks-accent hover:to-stonks-purple hover:text-black hover:border-transparent transition-all duration-300 font-medium text-sm shadow-md hover:shadow-stonks-accent/20"
+        >
+          {value}
+        </button>
       ))}
     </div>
   );
